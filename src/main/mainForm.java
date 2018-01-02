@@ -1077,6 +1077,7 @@ public class mainForm extends javax.swing.JFrame {
             doFormula(str);
         }
         Solve = "";
+        setColor();
     }//GEN-LAST:event_jButton5MouseClicked
 
     private void jButton6MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton6MouseClicked
