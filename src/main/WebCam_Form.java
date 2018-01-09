@@ -11,6 +11,9 @@ import com.github.sarxos.webcam.WebcamResolution;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
@@ -43,7 +46,7 @@ public class WebCam_Form extends javax.swing.JFrame {
 
     Webcam webcam = Webcam.getDefault();
     static int index = 0;
-    Mat mask = new Mat();
+    Mat out = new Mat();
 
 //    public String convertIntToStr(int index) {
 //        switch (index) {
@@ -64,10 +67,25 @@ public class WebCam_Form extends javax.swing.JFrame {
 //        }
 //        return "None";
 //    }
-    public void imgTransForm() {
-        Mat src = Imgcodecs.imread("test.jpg");
-        Mat hsv = new Mat(), red1 = new Mat(), red2 = new Mat(), yellow = new Mat(), blue = new Mat(), green = new Mat(), orange = new Mat(), white = new Mat(), sum = new Mat(), out = new Mat();
+    public static Mat BufferedImage2Mat(BufferedImage image) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", byteArrayOutputStream);
+        byteArrayOutputStream.flush();
+        return Imgcodecs.imdecode(new MatOfByte(byteArrayOutputStream.toByteArray()), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+    }
+
+    public static BufferedImage Mat2BufferedImage(Mat matrix) throws IOException {
+        MatOfByte mob = new MatOfByte();
+        Imgcodecs.imencode(".jpg", matrix, mob);
+        return ImageIO.read(new ByteArrayInputStream(mob.toArray()));
+    }
+
+    public BufferedImage imgTransForm(BufferedImage img) throws IOException {
+//        Mat src = Imgcodecs.imread("test.jpg");
+        Mat src = BufferedImage2Mat(img);
+        Mat hsv = new Mat(), red1 = new Mat(), red2 = new Mat(), yellow = new Mat(), blue = new Mat(), green = new Mat(), orange = new Mat(), white = new Mat(), sum = new Mat();
         Mat mask = Mat.zeros(src.rows(), src.cols(), CV_8U);
+        out = new Mat();
         cvtColor(src, hsv, COLOR_BGR2HSV);
 
         inRange(hsv, new Scalar(0, 150, 50), new Scalar(8, 255, 255), red1);
@@ -85,102 +103,16 @@ public class WebCam_Form extends javax.swing.JFrame {
         Core.add(white, sum, sum);
         Core.add(mask, sum, mask);
         src.copyTo(out, mask);
-        Imgcodecs.imwrite("test.jpg", out);
+        //ColorDetect(out);
+
+        //Imgcodecs.imwrite("test.jpg", out);
+        return Mat2BufferedImage(out);
     }
 
-//    public void ColorDetecter(Mat img) {
-//        int k = 0, v = -25, i = 0, j = 95;
-//        double R = 0, G = 0, B = 0;
-//        double H = 0, S = 0, V = 0;
-//        space qua[] = new space[9];
-//
-//        while (k != 9) {
-//            i = v;
-//            if (k % 3 == 0) {
-//                i += 130;
-//            }
-//            if (j > 485) {
-//                j = 95;
-//            }
-//            j += 80;
-//
-//            v = i;
-//            int m = j;
-//            for (; i <= v + 50; i++) {
-//                for (j = m; j <= m + 50; j++) {
-//                    double ma = 0, mi = 0, x = 0;
-//                    double BGR[] = img.get(i, j);
-//                    B = BGR[0];
-//                    G = BGR[1];
-//                    R = BGR[2];
-//                    ma = max(B, G);
-//                    ma = max(ma, R);
-//                    mi = min(B, G);
-//                    mi = min(mi, R);
-//                    x = ma - mi;
-//
-//                    V = ma;
-//                    if (ma != 0) {
-//                        S = x / ma * 255;
-//                    }
-//
-//                    if (x > 0) {
-//                        if (R == ma) {
-//                            if (G >= B) {
-//                                H = (G - B) / (ma - mi) * 60;
-//                            } else {
-//                                H = (G - B) / (ma - mi) * 60 + 360;
-//                            }
-//                        } else if (G == ma) {
-//                            H = 120 + (B - R) / (ma - mi) * 60;
-//                        } else if (B == ma) {
-//                            H = 240 + (R - G) / (ma - mi) * 60;
-//                        }
-//
-//                        H /= 2;
-//
-//                        if (!(S <= 50 && V >= 195)) {
-//                            if ((H > 0 && H < 8) || (H > 156 && H < 180)) {
-//                                qua[k].setColor(0, qua[k].getColor()[0]++);
-//                            } else if (H > 35 && H < 80) {
-//                                qua[k].setColor(1, qua[k].getColor()[1]++);
-//                            } else if (H > 95 && H < 124) {
-//                                qua[k].setColor(2, qua[k].getColor()[2]++);
-//                            } else if (H > 20 && H < 35) {
-//                                qua[k].setColor(3, qua[k].getColor()[3]++);
-//                            } else if (H > 8 && H < 20) {
-//                                qua[k].setColor(4, qua[k].getColor()[4]++);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//            qua[k].detect();
-//            k++;
-//        }
-//
-//        int n = 0;
-//        StringBuilder tempfacelet = new StringBuilder(facelet);
-//        if (qua[4].getTheColor() == "U") {
-//            n = 0;
-//        } else if (qua[4].getTheColor() == "R") {
-//            n = 9;
-//        } else if (qua[4].getTheColor() == "F") {
-//            n = 18;
-//        } else if (qua[4].getTheColor() == "D") {
-//            n = 27;
-//        } else if (qua[4].getTheColor() == "L") {
-//            n = 36;
-//        } else if (qua[4].getTheColor() == "B") {
-//            n = 45;
-//        }
-//        
-//        for (int c = 0; c < 9; c++) {
-//            tempfacelet.setCharAt(n + c, qua[c].getTheColor().charAt(0));
-//        }
-//        facelet = tempfacelet.toString();
-//        new mainForm().setColor();
-//    }
+    public void ColorDetect(Mat img) {
+
+    }
+
     /**
      * Creates new form WebCam_Form
      */
@@ -306,10 +238,10 @@ public class WebCam_Form extends javax.swing.JFrame {
         public void run() {
             while (true) {
                 try {
-                    ImageIO.write(webcam.getImage(), "JPG", new File("test.jpg"));
-                    imgTransForm();
+                    //ImageIO.write(webcam.getImage(), "JPG", new File("test.jpg"));
+                    Image img = imgTransForm(webcam.getImage());
 
-                    Image img = ImageIO.read(new File("test.jpg"));
+                    //Image img = ImageIO.read(new File("test.jpg"));
                     Graphics g = img.getGraphics();
 
                     g.drawRect(150, 80, 100, 100);
@@ -322,10 +254,8 @@ public class WebCam_Form extends javax.swing.JFrame {
                     g.drawRect(280, 340, 100, 100);
                     g.drawRect(410, 340, 100, 100);
                     jLabel1.setIcon(new ImageIcon(img));
-                    Thread.sleep(50);
+//                    Thread.sleep(50);
                 } catch (IOException ex) {
-                    Logger.getLogger(WebCam_Form.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (InterruptedException ex) {
                     Logger.getLogger(WebCam_Form.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }

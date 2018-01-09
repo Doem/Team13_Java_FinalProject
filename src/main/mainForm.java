@@ -14,6 +14,39 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kociemba.twophase.*;
 
+import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamResolution;
+
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+
+import static java.lang.Double.max;
+import static java.lang.Double.min;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import static main.mainForm.facelet;
+
+import static org.opencv.core.Core.inRange;
+import static org.opencv.core.CvType.CV_8U;
+
+import org.opencv.core.Mat;
+import org.opencv.imgcodecs.*;
+
+import static org.opencv.imgproc.Imgproc.COLOR_BGR2HSV;
+import static org.opencv.imgproc.Imgproc.cvtColor;
+import org.opencv.core.*;
+
+import main.space;
+
 import main.WebCam_Form;
 
 /**
@@ -1019,21 +1052,148 @@ public class mainForm extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1MouseClicked
 
     private void jButton2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2MouseClicked
-
-        File file = new File("cubeFacelet.txt");
-        
-        try {
-            Scanner scanner = new Scanner(file);
-            facelet = scanner.next();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(mainForm.class.getName()).log(Level.SEVERE, null, ex);
+        String trueface = "";
+        String[] facel = new String[6];
+        for (int c = 0; c < 6; c++) {
+            facel[c] = new String("");
         }
+        for (int p = 0; p < 6; p++) {
+            Mat img = Imgcodecs.imread("test" + p + ".jpg");
+//            Imshow im = new Imshow("Title");
+            int k = 0, v = -25, i = 0, j = 95;
+            double R = 0, G = 0, B = 0;
+            double H = 0, S = 0, V = 0;
+            space[] qua = new space[9];
+            for (int c = 0; c < 9; c++) {
+                qua[c] = new space();
+            }
+
+            Mat hsv = new Mat(), red1 = new Mat(), red2 = new Mat(), yellow = new Mat(), blue = new Mat(), green = new Mat(), orange = new Mat(), white = new Mat(), sum = new Mat(), out = new Mat();
+            Mat mask = Mat.zeros(img.rows(), img.cols(), CV_8U);
+            cvtColor(img, hsv, COLOR_BGR2HSV);
+
+            //inRange(hsv, new Scalar(0, 150, 50), new Scalar(8, 255, 255), red1);
+            inRange(hsv, new Scalar(156, 100, 50), new Scalar(180, 255, 255), red2);
+            inRange(hsv, new Scalar(20, 100, 50), new Scalar(35, 255, 255), yellow);
+            inRange(hsv, new Scalar(90, 40, 50), new Scalar(124, 255, 255), blue);
+            inRange(hsv, new Scalar(35, 100, 50), new Scalar(90, 255, 2555), green);
+            inRange(hsv, new Scalar(0, 60, 50), new Scalar(20, 255, 255), orange);
+            inRange(hsv, new Scalar(0, 0, 231), new Scalar(180, 100, 255), white);
+            Core.add(red2, red2, sum);
+            Core.add(yellow, sum, sum);
+            Core.add(blue, sum, sum);
+            Core.add(green, sum, sum);
+            Core.add(orange, sum, sum);
+            Core.add(white, sum, sum);
+            Core.add(mask, sum, mask);
+            img.copyTo(out, mask);
+            while (k != 9) {
+                i = v;
+                if (k % 3 == 0) {
+                    i += 130;
+                }
+                if (j > 485) {
+                    j = 95;
+                }
+                j += 80;
+
+                v = i;
+                int m = j;
+                for (; i <= v + 50; i++) {
+                    for (j = m; j <= m + 50; j++) {
+                        double ma = 0, mi = 0, x = 0;
+                        double BGR[] = out.get(i, j);
+                        B = BGR[0];
+                        G = BGR[1];
+                        R = BGR[2];
+                        ma = max(B, G);
+                        ma = max(ma, R);
+                        mi = min(B, G);
+                        mi = min(mi, R);
+                        x = ma - mi;
+
+                        V = ma;
+                        if (ma != 0) {
+                            S = x / ma * 255;
+                        }
+
+                        if (x > 0) {
+                            if (R == ma) {
+                                if (G >= B) {
+                                    H = (G - B) / (ma - mi) * 60;
+                                } else {
+                                    H = (G - B) / (ma - mi) * 60 + 360;
+                                }
+                            } else if (G == ma) {
+                                H = 120 + (B - R) / (ma - mi) * 60;
+                            } else if (B == ma) {
+                                H = 240 + (R - G) / (ma - mi) * 60;
+                            }
+
+                            H /= 2;
+//                        System.out.print("["+i+"]["+j+"] "+R+" "+G+" "+B+" ");
+//                        System.out.printf("%.2f",H);
+//                        System.out.println();
+                            if (!(S <= 50 && V >= 195)) {
+                                if ((H > 0 && H < 5) || (H > 156 && H < 180)) {
+                                    qua[k].setColor(0, qua[k].getColor()[0] + 1);
+                                } else if (H > 35 && H < 80) {
+                                    qua[k].setColor(1, qua[k].getColor()[1] + 1);
+                                } else if (H > 95 && H < 124) {
+                                    qua[k].setColor(2, qua[k].getColor()[2] + 1);
+                                } else if (H > 20 && H < 35) {
+                                    qua[k].setColor(3, qua[k].getColor()[3] + 1);
+                                } else if (H > 5 && H < 20) {
+                                    qua[k].setColor(4, qua[k].getColor()[4] + 1);
+                                }
+                            }
+                        }
+                    }
+                }
+                qua[k].detect();
+                k++;
+            }
+
+            int n = 0;
+
+            if (qua[4].getTheColor() == "U") {
+                n = 0;
+            } else if (qua[4].getTheColor() == "R") {
+                n = 1;
+            } else if (qua[4].getTheColor() == "F") {
+                n = 2;
+            } else if (qua[4].getTheColor() == "D") {
+                n = 3;
+            } else if (qua[4].getTheColor() == "L") {
+                n = 4;
+            } else if (qua[4].getTheColor() == "B") {
+                n = 5;
+            }
+
+            for (int c = 0; c < 9; c++) {
+                facel[n] += qua[c].getTheColor();
+            }
+        }
+
+        facelet = "";
+        for (int c = 0; c < 6; c++) {
+            facelet += facel[c];
+        }
+        System.out.println(facelet);
+//        File file = new File("cubeFacelet.txt");
+//        
+//        try {
+//            Scanner scanner = new Scanner(file);
+//            facelet = scanner.next();
+//        } catch (FileNotFoundException ex) {
+//            Logger.getLogger(mainForm.class.getName()).log(Level.SEVERE, null, ex);
+//        }
 
         setColor();
     }//GEN-LAST:event_jButton2MouseClicked
 
     private void jButton3MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton3MouseClicked
-        // TODO add your handling code here:
+        // TODO add your handling code here:        
         int verify = Tools.verify(facelet);
         switch (verify) {
             case 0:
@@ -1077,6 +1237,7 @@ public class mainForm extends javax.swing.JFrame {
             doFormula(str);
         }
         Solve = "";
+        jLabel57.setText(Solve);
         setColor();
     }//GEN-LAST:event_jButton5MouseClicked
 
@@ -1091,6 +1252,7 @@ public class mainForm extends javax.swing.JFrame {
             Solve += (temp[i] + " ");
         }
         System.out.println(temp[0]);
+        jLabel57.setText(Solve);
         doFormula(temp[0]);
         setColor();
     }//GEN-LAST:event_jButton6MouseClicked
